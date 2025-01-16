@@ -70,5 +70,39 @@ System now               : Rocky Linux release 8.10 (Green Obsidian)
 chown -R ${USER}:${USER} SpiRITROOT
 ```
 
-## Usage (Singularity)
-[] instruction for singularity exec
+## Singularity - for users without sudo privilege
+It is hard to use Docker without root privileges, especially on HPC. Instead, (Singularity)[https://sylabs.io/singularity/] users an alternative way to use Docker images⁠. To check if singularity command is available, do the following: 
+```{bash}
+user@server $ singularity --version
+singularity-ce version 3.11.4-1.el8
+```
+1. build the singularity image file
+```
+user@server $ singularity build image.sif docker://tck199732/spiritroot
+INFO:    Starting build...
+Getting image source signatures
+...
+INFO:    Creating SIF file...
+INFO:    Build complete: image.sif
+```
+This process usually takes a few minutes. You will probably see a lot of warning message `warn rootless{opt/root/lib/libASImage.so} ignoring (usually) harmless EPERM on setxattr "user.rootlesscontainers` but it probably does not affect its functionality. An file named `image.sif` is now generated. 
+
+2. Compile SpiRIROOT with singularity image
+Unlike Docker images, singularity mounts the host system to the container and retains the user privileges. To compile `SpiRIROOT`, prepare a script for the procedures, i.e.
+```
+#!/bin/bash
+# compile.sh
+mkdir -p build
+cd build
+cmake .. -DCMAKE_CXX_COMPILER=g++ \
+ -DROOT_CONFIG_EXECUTABLE=${SIMPATH}/bin/root-config \
+ -DROOT_CINT_EXECUTABLE=${SIMPATH}/bin/rootcint \
+ -DEigen3_DIR=$Eigen3_DIR
+make -j4
+cd ..
+```
+and make it an executable and finally run it with singularity
+```
+chmod +x ./compile.sh
+singularity exec image.sif ./compile.sh
+```
