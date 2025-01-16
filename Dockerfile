@@ -2,20 +2,21 @@
 FROM rockylinux:8.8 AS base
 ENV LANG=en_US.UTF-8
 
-WORKDIR /root
-COPY packages.txt /root/
+WORKDIR /app
+COPY packages.txt /app/
 
 RUN yum -y update && \
-    yum -y install $(cat /root/packages.txt) && \
+    yum -y install $(cat /app/packages.txt) && \
     yum clean all
 
 # Stage 2a : Configure FairSoft
 # --------------------------------------------------------------------------
 FROM base AS fairsoft-configure
-COPY ./fairsoft /root/fairsoft
-WORKDIR /root/fairsoft
-ENV SIMPATH=/root/fairsoft \
-    SIMPATH_INSTALL=/root/fairsoft/install
+
+COPY ./fairsoft /app/fairsoft
+WORKDIR /app/fairsoft
+ENV SIMPATH=/app/fairsoft \
+    SIMPATH_INSTALL=/app/fairsoft/install
 
 RUN scripts/check_system.sh
 
@@ -23,10 +24,10 @@ RUN scripts/check_system.sh
 # --------------------------------------------------------------------------
 FROM base AS fairsoft-basics
 
-COPY --from=fairsoft-configure /root/fairsoft /root/fairsoft
-WORKDIR /root/fairsoft
-ENV SIMPATH=/root/fairsoft \
-    SIMPATH_INSTALL=/root/fairsoft/install
+COPY --from=fairsoft-configure /app/fairsoft /app/fairsoft
+WORKDIR /app/fairsoft
+ENV SIMPATH=/app/fairsoft \
+    SIMPATH_INSTALL=/app/fairsoft/install
 
 RUN scripts/install_gtest.sh && \
     scripts/install_gsl.sh && \
@@ -44,10 +45,10 @@ RUN scripts/install_gtest.sh && \
 # --------------------------------------------------------------------------
 FROM fairsoft-basics AS fairsoft-generators
 
-COPY --from=fairsoft-basics /root/fairsoft /root/fairsoft
-WORKDIR /root/fairsoft
-ENV SIMPATH=/root/fairsoft \
-    SIMPATH_INSTALL=/root/fairsoft/install
+COPY --from=fairsoft-basics /app/fairsoft /app/fairsoft
+WORKDIR /app/fairsoft
+ENV SIMPATH=/app/fairsoft \
+    SIMPATH_INSTALL=/app/fairsoft/install
 
 RUN scripts/install_pythia6.sh && \
     scripts/install_hepmc.sh && \
@@ -58,10 +59,10 @@ RUN scripts/install_pythia6.sh && \
 # --------------------------------------------------------------------------
 FROM fairsoft-generators AS fairsoft-tools
 
-COPY --from=fairsoft-generators /root/fairsoft /root/fairsoft
-WORKDIR /root/fairsoft
-ENV SIMPATH=/root/fairsoft \
-    SIMPATH_INSTALL=/root/fairsoft/install
+COPY --from=fairsoft-generators /app/fairsoft /app/fairsoft
+WORKDIR /app/fairsoft
+ENV SIMPATH=/app/fairsoft \
+    SIMPATH_INSTALL=/app/fairsoft/install
 
 RUN scripts/install_root6.sh && \
     scripts/install_clhep.sh && \
@@ -74,10 +75,10 @@ RUN scripts/install_root6.sh && \
 # --------------------------------------------------------------------------
 FROM fairsoft-tools AS fairsoft-transport
 
-COPY --from=fairsoft-tools /root/fairsoft /root/fairsoft
-WORKDIR /root/fairsoft
-ENV SIMPATH=/root/fairsoft \
-    SIMPATH_INSTALL=/root/fairsoft/install
+COPY --from=fairsoft-tools /app/fairsoft /app/fairsoft
+WORKDIR /app/fairsoft
+ENV SIMPATH=/app/fairsoft \
+    SIMPATH_INSTALL=/app/fairsoft/install
 
 RUN scripts/install_geant3.sh && \
     scripts/install_geant4.sh && \
@@ -92,40 +93,48 @@ RUN scripts/install_geant3.sh && \
 # --------------------------------------------------------------------------
 FROM fairsoft-transport AS fairroot
 
-COPY --from=fairsoft-transport /root/fairsoft/install /root/fairsoft/install
+COPY --from=fairsoft-transport /app/fairsoft/install /app/fairsoft/install
 
-ENV SIMPATH=/root/fairsoft/install
+ENV SIMPATH=/app/fairsoft/install
 ENV PATH=$SIMPATH/bin:$PATH
 ENV LD_LIBRARY_PATH=$SIMPATH/lib:$LD_LIBRARY_PATH
 
-WORKDIR /root
-COPY fairroot.tar.gz install_fairroot.sh /root/
-ENV FAIRROOTPATH=/root/fairroot/install
+WORKDIR /app
+COPY fairroot.tar.gz install_fairroot.sh /app/
+ENV FAIRROOTPATH=/app/fairroot/install
 RUN ./install_fairroot.sh
 
 # Stage 4: Build eigen-3.4.0
 # --------------------------------------------------------------------------
 FROM base AS eigen3
 
-WORKDIR /root
-COPY eigen-3.4.0.tar.gz install_eigen3.sh /root/
+WORKDIR /app
+COPY eigen-3.4.0.tar.gz install_eigen3.sh /app/
 RUN ./install_eigen3.sh
     
 # Stage 5: Final image
 # --------------------------------------------------------------------------
 FROM fairroot AS final
 
-COPY --from=fairroot /root/fairsoft/install /root/fairsoft/install
-COPY --from=fairroot /root/fairroot/install /root/fairroot/install
-COPY --from=eigen3 /root/eigen-3.4.0 /root/eigen-3.4.0
+COPY --from=fairroot /app/fairsoft/install /app/fairsoft/install
+COPY --from=fairroot /app/fairroot/install /app/fairroot/install
+COPY --from=eigen3 /app/eigen-3.4.0 /app/eigen-3.4.0
 
-ENV SIMPATH=/root/fairsoft/install
-ENV FAIRROOTPATH=/root/fairroot/install
+RUN chown -R root:root /app/fairsoft/install && \
+    chown -R root:root /app/fairroot/install && \
+    chown -R root:root /app/eigen-3.4.0 && \
+    chmod -R 755 /app/fairsoft/install && \
+    chmod -R 755 /app/fairroot/install && \
+    chmod -R 755 /app/eigen-3.4.0
+
+ENV SIMPATH=/app/fairsoft/install
+ENV FAIRROOTPATH=/app/fairroot/install
 ENV MANPATH=$SIMPATH/share
 ENV PATH=$SIMPATH/bin:$FAIRROOTPATH/bin:$PATH
-ENV Eigen3_DIR=/root/eigen-3.4.0/build
+ENV Eigen3_DIR=/app/eigen-3.4.0/build
 ENV LD_LIBRARY_PATH=${SIMPATH}/lib:$FAIRROOTPATH/lib:$LD_LIBRARY_PATH
-WORKDIR /root
+
+WORKDIR /app
 
 CMD ["/bin/bash", "-c", "source $SIMPATH/share/Geant4/geant4make/geant4make.sh && source $SIMPATH/bin/thisroot.sh && exec /bin/bash"]
 
