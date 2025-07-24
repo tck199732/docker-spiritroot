@@ -6,9 +6,9 @@ Due to the incompatibility of several outdated dependencies, installing these on
 
 ## Content
 * [**1. Pre-requiste**](#prerequiste)
-* [**2. Usage with Docker**](#usage-docker)
-* [**3. Usage with Singularity**](#usage-singularity)
-
+* [**2. Usage with Docker**](#usage-with-docker)
+* [**3. Usage with Singularity**](#usage-with-singularity)
+* [**4. How to Contribute**](#how-to-contribute)
 
 ## Prerequiste
 Before using this repository, ensure you have the following:
@@ -70,7 +70,7 @@ System now               : Rocky Linux release 8.10 (Green Obsidian)
 chown -R ${USER}:${USER} SpiRITROOT
 ```
 
-## Usage with Singularity - for users without sudo privilege
+## Usage with Singularity
 It is hard to use Docker without root privileges, especially on HPC. Instead, [Singularity](https://sylabs.io/singularity/) is an alternative way to use Docker images⁠. To check if singularity commands are available, do the following: 
 ```{bash}
 user@server $ singularity --version
@@ -112,3 +112,16 @@ Singularity automatically mounts your user directory but not the shared location
 ```{bash}
 user@server $ singularity exec --bind ${host_dir}:${container_dir} ./ana.sh
 ```
+
+## How to contribute
+This section is for developers only. Currently, only the RockyLinux environment is supported. It is, however, helpful in cases to update due to dependency changes or build the container with a different base environment. Here is the procedure to update the repository. First, create a new branch by 
+```{bash}
+git checkout -b ${branch-name}
+```
+Then, make neccessary modifications and build the image in the root directory of the project with
+```
+docker build -t spirit-root:latest .
+```
+After testing, create a pull request to merge to the main branch if needed. 
+
+
