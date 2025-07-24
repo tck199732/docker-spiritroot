@@ -110,6 +110,7 @@ FROM base AS eigen3
 
 WORKDIR /app
 COPY eigen-3.4.0.tar.gz install_eigen3.sh /app/
+RUN file eigen-3.4.0.tar.gz && ls -lh eigen-3.4.0.tar.gz
 RUN ./install_eigen3.sh
     
 # Stage 5: Final image
