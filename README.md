@@ -6,8 +6,8 @@ Due to the incompatibility of several outdated dependencies, installing these on
 
 ## Content
 * [**1. Pre-requiste**](#prerequiste)
-* [**2. Usage**](#usage-docker)
-* [**3. Usage**](#usage-singularity)
+* [**2. Usage with Docker**](#usage-docker)
+* [**3. Usage with Singularity**](#usage-singularity)
 
 
 ## Prerequiste
@@ -20,20 +20,20 @@ Before using this repository, ensure you have the following:
 git clone -b 2024Spring https://github.com/SpiRIT-Collaboration/SpiRITROOT
 ```
 
-## Usage (Docker)
+## Usage with Docker
 ### 1. pull the docker image, see [here](https://hub.docker.com/r/tck199732/spiritroot)
 ```{bash}
-docker pull tck199732/:latest
+docker pull tck199732/spiritroot:latest
 ```
 ### 2. run the container 
 ```
-docker run -it -v ${host_dir}:${container_dir} tck199732/spirit-root
+docker run -it -v ${host_dir}:${container_dir} tck199732/spiritroot
 ```
 - Replace `${host_dir}` with the path to the SpiRITROOT directory on your machine.
 - Replace `${container_dir}` with the desired mount point inside the container (e.g., `/root/SpiRITROOT`).
 
 ### 3. Compile SpiRITROOT
-- Optional] Compilating `SpiRITROOT` generates a file `VERSION.compiled` which indicates the compiled version of `SpiRITROOT` formatted according to git commits and branch being used. To access these information, one must navigate to the `${container_dir}` and run 
+- [Optional] Compilating `SpiRITROOT` generates a file `VERSION.compiled` which indicates the compiled version of `SpiRITROOT` formatted according to git commits and branch being used. To access these information, one must navigate to the `${container_dir}` and run 
 ```
 git config --global --add safe.directory $(pwd)
 ```
@@ -70,8 +70,8 @@ System now               : Rocky Linux release 8.10 (Green Obsidian)
 chown -R ${USER}:${USER} SpiRITROOT
 ```
 
-## Singularity - for users without sudo privilege
-It is hard to use Docker without root privileges, especially on HPC. Instead, (Singularity)[https://sylabs.io/singularity/] users an alternative way to use Docker images⁠. To check if singularity command is available, do the following: 
+## Usage with Singularity - for users without sudo privilege
+It is hard to use Docker without root privileges, especially on HPC. Instead, [Singularity](https://sylabs.io/singularity/) is an alternative way to use Docker images⁠. To check if singularity commands are available, do the following: 
 ```{bash}
 user@server $ singularity --version
 singularity-ce version 3.11.4-1.el8
@@ -105,4 +105,10 @@ and make it an executable and finally run it with singularity
 ```
 chmod +x ./compile.sh
 singularity exec image.sif ./compile.sh
+```
+
+3. Mounting data to singularity container
+Singularity automatically mounts your user directory but not the shared location of data. To mount it to the container,
+```{bash}
+user@server $ singularity exec --bind ${host_dir}:${container_dir} ./ana.sh
 ```
