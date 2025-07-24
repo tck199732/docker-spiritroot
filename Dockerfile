@@ -110,6 +110,7 @@ FROM base AS eigen3
 
 WORKDIR /app
 COPY eigen-3.4.0.tar.gz install_eigen3.sh /app/
+RUN file eigen-3.4.0.tar.gz && ls -lh eigen-3.4.0.tar.gz
 RUN ./install_eigen3.sh
     
 # Stage 5: Final image
@@ -132,7 +133,7 @@ ENV FAIRROOTPATH=/app/fairroot/install
 ENV MANPATH=$SIMPATH/share
 ENV PATH=$SIMPATH/bin:$FAIRROOTPATH/bin:$PATH
 ENV Eigen3_DIR=/app/eigen-3.4.0/build
-ENV LD_LIBRARY_PATH=${SIMPATH}/lib:${SIMPATH}/lib64:$FAIRROOTPATH/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=${SIMPATH}/lib:${SIMPATH}/lib64:$FAIRROOTPATH/lib:${LD_LIBRARY_PATH:-}
 
 WORKDIR /app
 
